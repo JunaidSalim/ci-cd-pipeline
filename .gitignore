@@ -29,3 +29,9 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+*.pem
