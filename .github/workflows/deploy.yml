@@ -73,14 +73,25 @@ jobs:
           host: ${{ steps.get-ip.outputs.ec2_ip }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
-          # These variables must be indented correctly under 'with'
-          envs: ECR_REGISTRY,PROJECT_NAME,DB_PASSWORD,DB_ROOT_PASSWORD,DB_NAME,DB_USER
+          # Passing variables needed for the check and deploy
+          envs: PROJECT_NAME,AWS_REGION
           script: |
+            if ! command -v docker &> /dev/null; then
+              echo "Docker not found! Running emergency manual installation..."
+              sudo apt-get update -y
+              sudo apt-get install -y docker.io awscli
+              sudo usermod -aG docker ubuntu
+              # Refresh group membership for the current session
+              newgrp docker <<EONG
+            fi
+
+            # 2. Login to ECR
             aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ needs.build-and-push.outputs.registry }}
+            
             cd ~/app
             
+            # 3. Create/Update .env
             PUBLIC_IP=$(curl -s http://checkip.amazonaws.com)
-            
             cat <<EOF > .env
             ECR_REGISTRY=${{ needs.build-and-push.outputs.registry }}
             PROJECT_NAME=${{ env.PROJECT_NAME }}
@@ -92,5 +103,6 @@ jobs:
             REACT_APP_BACKEND_URL=http://$PUBLIC_IP:5000
             EOF
 
+            # 4. Deploy using the copied production file
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
