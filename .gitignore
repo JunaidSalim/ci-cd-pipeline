@@ -1,7 +1,6 @@
 # --- Security / Secrets ---
 .env
 *.env
-*.env.*
 
 # --- Python (Backend) ---
 __pycache__/
