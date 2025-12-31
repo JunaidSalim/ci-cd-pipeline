@@ -1,0 +1,37 @@
+services:
+  db:
+    image: mariadb:10.11
+    container_name: ${PROJECT_NAME}_db
+    restart: always
+    env_file: .env
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${DB_NAME}
+    networks:
+      - app_net
+
+  backend:
+    image: ${ECR_REGISTRY}/${PROJECT_NAME}-backend:latest
+    container_name: ${PROJECT_NAME}_backend
+    restart: always
+    env_file: .env
+    depends_on:
+      - db
+    networks:
+      - app_net
+
+  frontend:
+    image: ${ECR_REGISTRY}/${PROJECT_NAME}-frontend:latest
+    container_name: ${PROJECT_NAME}_frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL}
+    depends_on:
+      - backend
+    networks:
+      - app_net
+
+networks:
+  app_net:
