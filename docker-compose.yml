@@ -1,0 +1,33 @@
+services:
+  db:
+    image: mariadb:10.11
+    container_name: devops_db
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./backend/init.db:/docker-entrypoint-initdb.d
+
+  backend:
+    build: ./backend
+    container_name: devops_backend
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - db
+
+  frontend:
+    build: ./frontend
+    container_name: devops_frontend
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./frontend/.env
+    depends_on:
+      - backend
+
+volumes:
+  db_data:
